@@ -1,0 +1,37 @@
+# vim: set ft=dockerfile:
+
+# ------------------------------------------------------------------------------
+
+FROM golang:1.14 AS go
+
+RUN apt-get update && apt-get dist-upgrade -y && \
+    apt-get install -y musl-dev libssl-dev
+
+WORKDIR /go/src/github.com/sylr/cerberus
+
+COPY go*.mod go*.sum ./
+
+RUN go mod download
+
+COPY Makefile ./
+COPY .git .git
+
+COPY . .
+
+RUN make build GO_BUILD_TAGS=static,netgo
+
+# ------------------------------------------------------------------------------
+
+FROM scratch
+
+WORKDIR /usr/local/bin
+
+COPY --from=go /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=go /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=go /etc/passwd /etc/passwd
+COPY --from=go /etc/group /etc/group
+COPY --from=go /etc/services /etc/services
+
+COPY --from=go /go/src/github.com/sylr/cerberus/dist/cerberus .
+
+ENTRYPOINT ["/usr/local/bin/cerberus"]

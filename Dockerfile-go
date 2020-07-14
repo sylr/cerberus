@@ -1,0 +1,25 @@
+# vim: set ft=dockerfile:
+
+ARG CERBERUS_IMAGE_VERSION=dev
+
+# ------------------------------------------------------------------------------
+
+# Base image
+FROM golang:1.14
+
+RUN apt-get update && apt-get dist-upgrade -y && \
+    apt-get install -y build-essential libc6-dev libbsd-dev zlib1g-dev libzstd-dev \
+    libsasl2-dev liblz4-dev musl-dev libssl-dev
+
+WORKDIR /go/src/github.com/sylr/cerberus
+
+COPY go*.mod go*.sum ./
+
+RUN go mod download
+
+COPY Makefile ./
+COPY .git .git
+
+COPY . .
+
+RUN make build

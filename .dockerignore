@@ -1,0 +1,10 @@
+.docker-build
+.docker-build-go
+.docker-build-react
+.go-build-flags
+.vscode/
+__debug_bin
+config.yaml
+bin/*
+build/*
+dist/*
