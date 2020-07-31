@@ -16,7 +16,6 @@ import (
 	"github.com/leebenson/conform"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	qdcache "github.com/sylr/go-libqd/cache"
 	qdconfig "github.com/sylr/go-libqd/config"
 )
 
@@ -121,10 +120,6 @@ func main() {
 	}
 
 	go server.ListenAndServe()
-
-	for i := 0; i < 100; i++ {
-		qdcache.GetMeteredCache(2*time.Minute, 2*time.Minute).Set(fmt.Sprintf("%d", i), nil, 0)
-	}
 
 	// Replace router when new conf is sent through the config chan
 	configChan := configManager.NewConfigChan(nil)
