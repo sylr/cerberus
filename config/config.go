@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,43 +36,59 @@ type Cerberus struct {
 	CerberusMention  *CerberusMention `yaml:"cerberus_mention" json:"cerberus_mention" toml:"cerberus_mention"`
 }
 
+// ConfigFile ...
 func (c *Cerberus) ConfigFile() string {
 	return c.File
 }
 
+// Slack ...
 type Slack struct {
 	Token   string `yaml:"token" json:"token" toml:"tokeb" conform:"redact"`
 	Verbose bool   `yaml:"verbose" json:"verbose" toml:"verbose" `
 }
 
+// CerberusMention ...
 type CerberusMention struct {
 	Messages []CerberusMentionMessage `yaml:"messages" json:"messages" toml:"messages"`
 }
 
+// CerberusMentionMessage ...
 type CerberusMentionMessage struct {
 	Text     string `yaml:"text" json:"text" toml:"text"`
 	ImageURL string `yaml:"image_url" json:"image_url" toml:"image_url"`
 }
 
+// Safe is a struct Validators and Appliers.
 type Safe struct {
-	sync.RWMutex
 	Logger *log.Logger
+	mu     sync.Mutex
 }
 
+// ListeningAddressValidator defaults the listening address to "0.0.0.0:8080" if not set.
 func (s *Safe) ListeningAddressValidator(currentConfig qdconfig.Config, newConfig qdconfig.Config) []error {
-	conf := newConfig.(*Cerberus)
+	var errors []error
+	curConf := currentConfig.(*Cerberus)
+	newConf := newConfig.(*Cerberus)
 
-	if len(conf.ListeningAddress) == 0 {
-		conf.ListeningAddress = "0.0.0.0:8080"
+	if len(newConf.ListeningAddress) == 0 {
+		newConf.ListeningAddress = "0.0.0.0:8080"
 	}
 
-	return nil
+	if curConf != nil {
+		if curConf.ListeningAddress != newConf.ListeningAddress {
+			errors = append(errors, fmt.Errorf("Changing listening address is not implemented"))
+		}
+	}
+
+	return errors
 }
 
+// LogValidator does nothing
 func (s *Safe) LogValidator(currentConfig qdconfig.Config, newConfig qdconfig.Config) []error {
 	return nil
 }
 
+// LogApplier sets the log level
 func (s *Safe) LogApplier(currentConfig qdconfig.Config, newConfig qdconfig.Config) error {
 	conf := newConfig.(*Cerberus)
 
@@ -87,22 +104,21 @@ func (s *Safe) LogApplier(currentConfig qdconfig.Config, newConfig qdconfig.Conf
 	return nil
 }
 
+// ReloadApplier incerments newConfig.Reloads and reload prometheus metric
 func (s *Safe) ReloadApplier(currentConfig qdconfig.Config, newConfig qdconfig.Config) error {
 	var currentConf *Cerberus
 	var newConf *Cerberus
 
-	s.Lock()
-	defer s.Unlock()
-
 	newConf = newConfig.(*Cerberus)
 
 	if currentConfig != nil {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
 		currentConf = currentConfig.(*Cerberus)
 		newConf.Reloads = currentConf.Reloads + 1
 
 		metricConfigReloadsTotal.WithLabelValues().Inc()
-	} else {
-		newConf.Reloads = 0
 	}
 
 	return nil
