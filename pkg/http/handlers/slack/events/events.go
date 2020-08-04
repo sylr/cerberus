@@ -92,14 +92,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.Logger.Errorf("%v", err)
 		h.Logger.Infof("json=%v", string(js))
 		return
-	} else {
-		h.Logger.Debugf("event=%#v", eventsAPIEvent)
 	}
+
+	h.Logger.Debugf("eventsAPIEvent.Type=%v", eventsAPIEvent.Type)
 
 	// Callback event
 	if eventsAPIEvent.Type == goslackevents.CallbackEvent {
 		innerEvent := eventsAPIEvent.InnerEvent
-		h.Logger.Debugf("eventsAPIEvent.innerEvent=%v", innerEvent)
+		h.Logger.Debugf("eventsAPIEvent.InnerEvent=%v", innerEvent)
 
 		metricEventsReceivedTotal.WithLabelValues(innerEvent.Type).Inc()
 
@@ -107,7 +107,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch ev := innerEvent.Data.(type) {
 		// AppMentionEvent
 		case *goslackevents.AppMentionEvent:
-			h.Logger.Debugf("eventsAPIEvent.innerEvent.Data=%v", ev)
+			h.Logger.Debugf("eventsAPIEvent.InnerEvent.Data=%v", ev)
 
 			for _, action := range h.AppMentionEventActions {
 				actionned, err := action.Action(ev)
@@ -123,7 +123,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// MessageEvent
 		case *goslackevents.MessageEvent:
-			h.Logger.Debugf("eventsAPIEvent.innerEvent.Data=%v", ev)
+			h.Logger.Debugf("eventsAPIEvent.InnerEvent.Data=%v", ev)
 
 			for _, action := range h.MessageEventActions {
 				actionned, err := action.Action(ev)
@@ -139,7 +139,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// SubteamUpdatedEvent
 		case *goslack.SubteamUpdatedEvent:
-			h.Logger.Debugf("eventsAPIEvent.innerEvent.Data=%v", ev)
+			h.Logger.Debugf("eventsAPIEvent.InnerEvent.Data=%v", ev)
 
 			for _, action := range h.SubteamUpdatedEventActions {
 				actionned, err := action.Action(ev)
