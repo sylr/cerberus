@@ -67,14 +67,15 @@ type Safe struct {
 // ListeningAddressValidator defaults the listening address to "0.0.0.0:8080" if not set.
 func (s *Safe) ListeningAddressValidator(currentConfig qdconfig.Config, newConfig qdconfig.Config) []error {
 	var errors []error
-	curConf := currentConfig.(*Cerberus)
 	newConf := newConfig.(*Cerberus)
 
 	if len(newConf.ListeningAddress) == 0 {
 		newConf.ListeningAddress = "0.0.0.0:8080"
 	}
 
-	if curConf != nil {
+	if currentConfig != nil {
+		curConf := currentConfig.(*Cerberus)
+
 		if curConf.ListeningAddress != newConf.ListeningAddress {
 			errors = append(errors, fmt.Errorf("Changing listening address is not implemented"))
 		}
@@ -95,10 +96,13 @@ func (s *Safe) LogApplier(currentConfig qdconfig.Config, newConfig qdconfig.Conf
 	switch {
 	case len(conf.Verbose) == 1:
 		log.SetLevel(log.DebugLevel)
+		log.SetReportCaller(true)
 	case len(conf.Verbose) > 1:
 		log.SetLevel(log.TraceLevel)
+		log.SetReportCaller(true)
 	default:
 		log.SetLevel(log.InfoLevel)
+		log.SetReportCaller(false)
 	}
 
 	return nil
