@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 
-FROM golang:1.14 AS go
+FROM golang:1.15 AS go
 
 RUN apt-get update && apt-get dist-upgrade -y && \
     apt-get install -y musl-dev libssl-dev
