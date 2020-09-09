@@ -75,8 +75,6 @@ func (a *CerberusMention) Action(event interface{}) (bool, error) {
 		}
 	}
 
-	a.client.PostMessage(ev.Channel)
-
 	_, _, err := a.client.PostMessage(ev.Channel, msgOptions...)
 
 	if err != nil {
