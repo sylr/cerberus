@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/sylr/cerberus/config"
@@ -21,7 +20,6 @@ import (
 
 var (
 	version       = "v0.0.0"
-	goVersion     = runtime.Version()
 	configManager = qdconfig.GetManager(log.StandardLogger())
 )
 
@@ -99,11 +97,20 @@ func main() {
 
 	configManager.AddValidators(nil, safe.ListeningAddressValidator, safe.LogValidator)
 	configManager.AddAppliers(nil, safe.LogApplier, safe.ReloadApplier)
-	configManager.MakeConfig(ctx, nil, conf)
+	err := configManager.MakeConfig(ctx, nil, conf)
 
+	if err != nil {
+		os.Exit(1)
+	}
+
+	// Print configuration
 	if log.GetLevel() >= log.DebugLevel {
 		confRedacted := conf.DeepCopy()
-		conform.Strings(confRedacted)
+
+		if err := conform.Strings(confRedacted); err != nil {
+			log.Errorf("%v", err)
+		}
+
 		log.Debugf("Configuration %#v", confRedacted)
 	}
 
@@ -119,7 +126,12 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	go server.ListenAndServe()
+	go func() {
+		err := server.ListenAndServe()
+		log.Errorf("%v", err)
+
+		os.Exit(1)
+	}()
 
 	// Replace router when new conf is sent through the config chan
 	configChan := configManager.NewConfigChan(nil)
@@ -128,7 +140,11 @@ func main() {
 		case newConf := <-configChan:
 			if log.GetLevel() >= log.DebugLevel {
 				confRedacted := newConf.(*config.Cerberus).DeepCopy()
-				conform.Strings(confRedacted)
+
+				if err := conform.Strings(confRedacted); err != nil {
+					log.Errorf("%v", err)
+				}
+
 				log.Debugf("Configuration %#v", confRedacted)
 			}
 

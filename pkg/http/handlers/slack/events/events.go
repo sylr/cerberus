@@ -82,7 +82,14 @@ func NewHandler(conf *config.Cerberus, logger *log.Logger, slackClient *goslack.
 // ServeHTTP ...
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
+	_, err := buf.ReadFrom(r.Body)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.Logger.Errorf("%v", err)
+		return
+	}
+
 	js := json.RawMessage(buf.Bytes())
 	token := goslackevents.OptionNoVerifyToken()
 	eventsAPIEvent, err := goslackevents.ParseEvent(js, token)
@@ -173,7 +180,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "text")
-		w.Write([]byte(r.Challenge))
+		_, _ = w.Write([]byte(r.Challenge))
 
 		return
 	}

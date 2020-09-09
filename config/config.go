@@ -110,8 +110,7 @@ func (s *Safe) LogApplier(currentConfig qdconfig.Config, newConfig qdconfig.Conf
 
 // ReloadApplier incerments newConfig.Reloads and reload prometheus metric
 func (s *Safe) ReloadApplier(currentConfig qdconfig.Config, newConfig qdconfig.Config) error {
-	var currentConf *Cerberus
-	var newConf *Cerberus
+	var currentConf, newConf *Cerberus
 
 	newConf = newConfig.(*Cerberus)
 
